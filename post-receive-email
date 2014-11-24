@@ -166,21 +166,6 @@ prep_for_email()
 			;;
 	esac
 
-	# Check if we've got anyone to send to
-	if [ -z "$recipients" ]; then
-		case "$refname_type" in
-			"annotated tag")
-				config_name="hooks.announcelist"
-				;;
-			*)
-				config_name="hooks.mailinglist"
-				;;
-		esac
-		echo >&2 "*** $config_name is not set so no email will be sent"
-		echo >&2 "*** for $refname update $oldrev->$newrev"
-		return 1
-	fi
-
 	return 0
 }
 
@@ -212,8 +197,6 @@ generate_email()
 		describe=$rev
 	fi
 
-	generate_email_header
-
 	# Call the correct body generation function
 	fn_name=general
 	case "$refname_type" in
@@ -230,44 +213,6 @@ generate_email()
 	else
 		generate_${change_type}_${fn_name}_email | limit_lines $maxlines
 	fi
-
-	generate_email_footer
-}
-
-generate_email_header()
-{
-	# --- Email (all stdout will be the email)
-	# Generate header
-	cat <<-EOF
-	To: $recipients
-	Subject: ${emailprefix}$projectdesc $refname_type $short_refname ${change_type}d. $describe
-	MIME-Version: 1.0
-	Content-Type: text/plain; charset=utf-8
-	Content-Transfer-Encoding: 8bit
-	X-Git-Refname: $refname
-	X-Git-Reftype: $refname_type
-	X-Git-Oldrev: $oldrev
-	X-Git-Newrev: $newrev
-	Auto-Submitted: auto-generated
-
-	This is an automated email from the git hooks/post-receive script. It was
-	generated because a ref change was pushed to the repository containing
-	the project "$projectdesc".
-
-	The $refname_type, $short_refname has been ${change_type}d
-	EOF
-}
-
-generate_email_footer()
-{
-	SPACE=" "
-	cat <<-EOF
-
-
-	hooks/post-receive
-	--${SPACE}
-	$projectdesc
-	EOF
 }
 
 # --------------- Branches
@@ -277,13 +222,8 @@ generate_email_footer()
 #
 generate_create_branch_email()
 {
-	# This is a new branch and so oldrev is not valid
-	echo "        at  $newrev ($newrev_type)"
-	echo ""
-
-	echo $LOGBEGIN
+	echo "[$GL_REPO] $GL_USER created $short_refname from ??? (+??? new commits):"
 	show_new_revisions
-	echo $LOGEND
 }
 
 #
@@ -291,6 +231,8 @@ generate_create_branch_email()
 #
 generate_update_branch_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	# Consider this:
 	#   1 --- 2 --- O --- X --- 3 --- 4 --- N
 	#
@@ -470,6 +412,8 @@ generate_update_branch_email()
 #
 generate_delete_branch_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "       was  $oldrev"
 	echo ""
 	echo $LOGBEGIN
@@ -484,6 +428,8 @@ generate_delete_branch_email()
 #
 generate_create_atag_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "        at  $newrev ($newrev_type)"
 
 	generate_atag_email
@@ -495,6 +441,8 @@ generate_create_atag_email()
 #
 generate_update_atag_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "        to  $newrev ($newrev_type)"
 	echo "      from  $oldrev (which is now obsolete)"
 
@@ -570,6 +518,8 @@ generate_atag_email()
 #
 generate_delete_atag_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "       was  $oldrev"
 	echo ""
 	echo $LOGBEGIN
@@ -585,6 +535,8 @@ generate_delete_atag_email()
 #
 generate_create_general_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "        at  $newrev ($newrev_type)"
 
 	generate_general_email
@@ -596,6 +548,8 @@ generate_create_general_email()
 #
 generate_update_general_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "        to  $newrev ($newrev_type)"
 	echo "      from  $oldrev"
 
@@ -635,6 +589,8 @@ generate_general_email()
 #
 generate_delete_general_email()
 {
+	echo "$refname_type $short_refname ${change_type}d. $describe"
+
 	echo "       was  $oldrev"
 	echo ""
 	echo $LOGBEGIN
@@ -670,16 +626,11 @@ show_new_revisions()
 	other_branches=$(git for-each-ref --format='%(refname)' refs/heads/ |
 	    grep -F -v $refname)
 	git rev-parse --not $other_branches |
-	if [ -z "$custom_showrev" ]
-	then
-		git rev-list --pretty --stdin $revspec
-	else
 		git rev-list --stdin $revspec |
 		while read onerev
 		do
-			eval $(printf "$custom_showrev" $onerev)
+			git log -1 --format="${GL_REPO}/${short_refname} %h %an: %s" $onerev
 		done
-	fi
 }
 
 
@@ -703,11 +654,7 @@ limit_lines()
 
 send_mail()
 {
-	if [ -n "$envelopesender" ]; then
-		/usr/sbin/sendmail -t -f "$envelopesender"
-	else
-		/usr/sbin/sendmail -t
-	fi
+	cat
 }
 
 # ---------------------------- main()
