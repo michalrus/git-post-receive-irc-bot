@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# ./connect and call this script from your $REPO.git/hooks/post-receive script
+# takes two args: <network> and <channel> (these are ii's args, see ./connect)
+
+die() {
+  echo 'fatal:' "$@" >&2
+  exit 1
+}
+
+[ "$#" -eq 2 ] || die "usage: $0 <network> <channel>"
+
+network="$(dirname "$(readlink -f "$0")")/irc/$1/in"
+channel="$(dirname "$(readlink -f "$0")")/irc/$1/$2/in"
+
+[ -p "$network" ] || die "$network: not a named pipe; edit ./connect script and reconnect"
+[ -p "$channel" ] || die "$channel: not a named pipe; edit ./connect script and reconnect"
+
+# -- temporarily taken and adapted from http://www.rogdham.net/2013/04/07/git-irc-bot-in-5-minutes.en
+
+# GH's reference:
+#   20:15:25 < github_scalaz> [scalaz] larsrh tagged v7.1.0-M5 at 9d5d326: http://git.io/Rr2dTg
+#   13:52:44 < github_scalaz> [scalaz] larsrh created series/7.1.x from scalaz-seven (+0 new commits): http://git.io/W7ZsWQ
+#   14:02:53 < github_scalaz> [scalaz] larsrh deleted master at 46f0799: http://git.io/fWfABg
+#   17:04:09 < github_scalaz> [scalaz] larsrh deleted topic/residual-futures at b2d9c78: http://git.io/na_zug
+
+read oldrev newrev ref
+
+branch="$(echo "$ref" | sed 's,^refs/heads/,,g')"
+
+# commits to consider
+if [ "$oldrev" = '0000000000000000000000000000000000000000' ]
+then
+    # new branch!
+    echo "[$GL_REPO] $GL_USER created a new branch: $branch" >"$channel"
+    # get all revisions specific to this branch
+    commits="$(git for-each-ref --format='%(refname)' 'refs/heads/*' \
+        |grep -v "$ref"|sed 's/^/\^/') $newrev"
+else
+    # range of revisions
+    commits="$oldrev..$newrev"
+fi
+
+# count number of commits
+num=$(git log --format='%h' $commits|wc -l)
+s=$([ "$num" != '1' ] && echo 's') # plural
+
+# generate messages
+echo "[$GL_REPO] $GL_USER pushed $num new commit$s to $branch:" >"$channel"
+git log --format="$GL_REPO/$branch %h %an: %s%n" $commits --reverse >"$channel"
