@@ -2,11 +2,16 @@
 
 # download http://tools.suckless.org/ii/ and `make clean install` to ./us/ prefix
 
-channels='#us'
+channels='#us #test'
 
 dir=/home/git/git-bot
 
 export IIPASS='AvJFdxEXYXRXuDnXSrTdq6Q38wMTp8'
 nohup $dir/ii/bin/ii -i $dir/irc/ -s localhost -e ssl -f 'git' -n git -k IIPASS &
 
-nohup sh -c "sleep 10 && printf '/mode git +B\n/j $channels\n' >$dir/irc/localhost/in" &
+sleep 5
+
+echo '/mode git +B' >$dir/irc/localhost/in
+for ch in $channels ; do
+  echo "/j $ch" >$dir/irc/localhost/in
+done
