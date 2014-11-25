@@ -23,7 +23,5 @@ channel="$owndir/irc/$1/$2/in"
 #   05:51:47 < github_scalaz> scalaz/scalaz-seven 12434f5 xuwei-k: EitherTBifoldable test
 
 #   20:15:25 < github_scalaz> [scalaz] larsrh tagged v7.1.0-M5 at 9d5d326: http://git.io/Rr2dTg
-#   14:02:53 < github_scalaz> [scalaz] larsrh deleted master at 46f0799: http://git.io/fWfABg
-#   17:04:09 < github_scalaz> [scalaz] larsrh deleted topic/residual-futures at b2d9c78: http://git.io/na_zug
 
 cat | "$owndir/post-receive-email" | head -n 7 >"$channel"

@@ -232,7 +232,13 @@ generate_create_branch_email()
 	git rev-parse --not $other_branches | git rev-list --reverse --stdin $revspec >$tmp
 
 	count=$(cat $tmp | wc -l)
-	echo "[$GL_REPO] $GL_USER created $short_refname from ??? (+$count new commits)"$( [ $count -gt 0 ] && echo ":" )
+	parent=$newrev
+	if [ $count -gt 0 ] ; then
+		parent=$(git rev-parse $(cat $tmp | head -n 1)^)
+	fi
+	sympar=$(git name-rev --name-only --refs='refs/heads/*' $parent)
+
+	echo "[$GL_REPO] $GL_USER created $short_refname from $sympar (+$count new commits)"$( [ $count -gt 0 ] && echo ":" )
 	cat $tmp | while read onerev ; do
 		git log -1 --format="${GL_REPO}/${short_refname} %h %an: %s" $onerev
 	done
@@ -404,13 +410,7 @@ generate_update_branch_email()
 #
 generate_delete_branch_email()
 {
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "       was  $oldrev"
-	echo ""
-	echo $LOGBEGIN
-	git diff-tree -s --always --encoding=UTF-8 --pretty=oneline $oldrev
-	echo $LOGEND
+	echo "[$GL_REPO] $GL_USER deleted $short_refname at "$(git rev-parse --short $oldrev)
 }
 
 # --------------- Annotated tags
