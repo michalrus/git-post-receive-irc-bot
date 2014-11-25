@@ -1,4 +1,15 @@
 #!/bin/sh
+
+
+xA=$(/bin/echo -e '\x0313')
+xB=$(/bin/echo -e '\x0315')
+xC=$(/bin/echo -e '\x0306')
+xD=$(/bin/echo -e '\x02')
+xE=$(/bin/echo -e '\x0314')
+xF=$(/bin/echo -e '\x0304')
+xR=$(/bin/echo -e '\x0f')
+
+
 #
 # Copyright (c) 2007 Andy Parkins
 #
@@ -238,9 +249,9 @@ generate_create_branch_email()
 	fi
 	sympar=$(git name-rev --name-only --refs='refs/heads/*' $parent)
 
-	echo "[$GL_REPO] $GL_USER created $short_refname from $sympar (+$count new commits)"$( [ $count -gt 0 ] && echo ":" )
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from $xC$sympar$xR (+$xD$count$xR new commits)"$( [ $count -gt 0 ] && echo ":" )
 	cat $tmp | while read onerev ; do
-		git log -1 --format="${GL_REPO}/${short_refname} %h %an: %s" $onerev
+		git log -1 --format="$xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
 	done
 
 	rm $tmp
@@ -410,7 +421,7 @@ generate_update_branch_email()
 #
 generate_delete_branch_email()
 {
-	echo "[$GL_REPO] $GL_USER deleted $short_refname at "$(git rev-parse --short $oldrev)
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(git rev-parse --short $oldrev)"$xR"
 }
 
 # --------------- Annotated tags
