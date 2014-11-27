@@ -224,7 +224,7 @@ show_new_revisions()
 {
 	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR $1"$( [ $new_revs_count -gt 0 ] && echo ":" )
 	cat $new_revs_list_file | while read onerev ; do
-		git log -1 --format="  $xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
+		git log -1 --format="$xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
 	done
 }
 
