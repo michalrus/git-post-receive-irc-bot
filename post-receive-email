@@ -115,6 +115,7 @@ generate_email()
 
 	prep_for_show_new_revs
 	generate_${change_type}_${fn_name}_email
+	cleanup_show_new_revs
 }
 
 # --------------- Branches
