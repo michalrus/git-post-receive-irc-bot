@@ -2,7 +2,7 @@
 
 # download http://tools.suckless.org/ii/ and `make clean install` to ./us/ prefix
 
-channels='#us #test'
+channels='#us'
 
 dir=/home/git/git-bot
 
