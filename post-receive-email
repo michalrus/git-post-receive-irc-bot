@@ -121,7 +121,7 @@ generate_email()
 
 generate_create_branch_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from $xC$(rev2ref $new_revs_parent)$xR (+${xD}$new_revs_count$xR new $s_commits)"
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from "$(rev2ref $new_revs_parent)" (+${xD}$new_revs_count$xR new $s_commits)"
 }
 
 generate_update_branch_email()
@@ -133,36 +133,36 @@ generate_update_branch_email()
 	if [ "$fast_forward" ]; then
 		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}$new_revs_count$xR new $s_commits to $xC$short_refname$xR"
 	else
-		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(shorten $oldrev)"$xR to $xE"$(shorten $newrev)"$xR (+${xD}$new_revs_count$xR new $s_commits)"
+		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)" (+$xD$new_revs_count$xR new $s_commits)"
 	fi
 }
 
 generate_delete_branch_email()
 {
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(shorten $oldrev)"$xR"
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
 }
 
 # --------------- General references (most likely tags)
 
 generate_create_general_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR tagged $xC$short_refname$xR at $xE"$(shorten $newrev)"$xR"
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR tagged $xC$short_refname$xR at "$(rev2ref $newrev)
 }
 
 generate_update_general_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(shorten $oldrev)"$xR to $xE"$(shorten $newrev)"$xR"
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)
 }
 
 generate_delete_general_email()
 {
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(shorten $oldrev)"$xR"
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
 }
 
 # --------------- Miscellaneous utilities
 
 shorten() {
-	git rev-parse --short "$1"
+	echo "$xE"$(git rev-parse --short "$1")"$xR"
 }
 
 rev2ref() {
@@ -170,7 +170,7 @@ rev2ref() {
 	first_symbol=$(git for-each-ref --format="%(refname:short) %(objectname)" 'refs/heads/' | grep "$1" | grep -v "^$short_refname " | cut -d " " -f 1 | head -n 1)
 
 	if [ -n "$first_symbol" ] ; then
-		echo "$first_symbol"
+		echo "$xC$first_symbol$xR"
 	else
 		shorten "$1"
 	fi
