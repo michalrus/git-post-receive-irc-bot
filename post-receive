@@ -14,14 +14,13 @@ owndir="$(dirname "$(readlink -f "$0")")"
 network="$owndir/irc/$1/in"
 channel="$owndir/irc/$1/$2/in"
 
-[ -p "$network" ] || die "$network: not a named pipe; edit ./connect script and reconnect"
-[ -p "$channel" ] || die "$channel: not a named pipe; edit ./connect script and reconnect"
+[ -p "$network" ] || die "$network: not a named pipe; edit $owndir/connect script and reconnect"
 
-# GH's reference:
-#   05:51:47 < github_scalaz> [scalaz] xuwei-k pushed 2 new commits to scalaz-seven: http://git.io/8A6Zwg
-#   05:51:47 < github_scalaz> scalaz/scalaz-seven 903e6ff xuwei-k: add EitherTBifoldable
-#   05:51:47 < github_scalaz> scalaz/scalaz-seven 12434f5 xuwei-k: EitherTBifoldable test
+[ -p "$channel" ] || {
+  echo "git-bot: $1/$2 not yet joined; joining"
+  echo "/j $2" >"$network"
+  sleep 1
+  [ -p "$channel" ] || die "$channel: not a named pipe; edit $owndir/connect script and reconnect"
+}
 
-#   20:15:25 < github_scalaz> [scalaz] larsrh tagged v7.1.0-M5 at 9d5d326: http://git.io/Rr2dTg
-
-cat | "$owndir/post-receive-email" >"$channel"
+cat | "$owndir/post-receive-irc" >"$channel"
