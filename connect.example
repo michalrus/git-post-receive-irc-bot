@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# download http://tools.suckless.org/ii/ and `make clean install` to ./us/ prefix
+
+channels_onconnect='#chan1 #chan2 #chan3'
+
+owndir="$(dirname "$(readlink -f "$0")")"
+
+trap "" HUP
+
+while true; do
+  export IIPASS='AvJFdxEXYXRXuDnXSrTdq6Q38wMTp8'
+  $owndir/ii/bin/ii -i $owndir/irc/ -s localhost -e ssl -f 'git' -n git -k IIPASS &
+  iipid="$!"
+
+  sleep 2
+
+  echo '/mode git +B' >$owndir/irc/localhost/in
+  for ch in $channels_onconnect ; do
+    echo "/j $ch" >$owndir/irc/localhost/in
+  done
+
+  wait "$iipid"
+  sleep 1
+done &
