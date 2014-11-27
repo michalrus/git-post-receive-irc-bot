@@ -131,7 +131,11 @@ generate_update_branch_email()
 	[ -z "$(git rev-list $newrev..$oldrev)" ] && fast_forward=1
 
 	if [ "$fast_forward" ]; then
-		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}$new_revs_count$xR new $s_commits to $xC$short_refname$xR"
+		if [ $new_revs_count -gt 0 ] ; then
+			show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}$new_revs_count$xR new $s_commits to $xC$short_refname$xR"
+		else
+			show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR fast-forwarded $xC$short_refname$xR to "$(rev2ref $newrev)" (+${xD}0$xR new commits)"
+		fi
 	else
 		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)" (+$xD$new_revs_count$xR new $s_commits)"
 	fi
