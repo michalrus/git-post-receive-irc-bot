@@ -24,4 +24,4 @@ channel="$owndir/irc/$1/$2/in"
 
 #   20:15:25 < github_scalaz> [scalaz] larsrh tagged v7.1.0-M5 at 9d5d326: http://git.io/Rr2dTg
 
-cat | "$owndir/post-receive-email" | head -n 7 >"$channel"
+cat | "$owndir/post-receive-email" >"$channel"
