@@ -233,28 +233,7 @@ generate_email()
 #
 generate_create_branch_email()
 {
-	# Show all revisions exclusive to this (new) branch.
-	revspec=$newrev
-
-	tmp=$(mktemp)
-
-	other_branches=$(git for-each-ref --format='%(refname)' refs/heads/ |
-	    grep -F -v $refname)
-	git rev-parse --not $other_branches | git rev-list --reverse --stdin $revspec >$tmp
-
-	count=$(cat $tmp | wc -l)
-	parent=$newrev
-	if [ $count -gt 0 ] ; then
-		parent=$(git rev-parse $(cat $tmp | head -n 1)^)
-	fi
-	sympar=$(git name-rev --name-only --refs='refs/heads/*' $parent)
-
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from $xC$sympar$xR (+$xD$count$xR new commits)"$( [ $count -gt 0 ] && echo ":" )
-	cat $tmp | while read onerev ; do
-		git log -1 --format="$xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
-	done
-
-	rm $tmp
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from ${xC}__SYMPARENT__$xR (+${xD}__COUNT__$xR new __COMMITS__)"
 }
 
 #
@@ -262,157 +241,19 @@ generate_create_branch_email()
 #
 generate_update_branch_email()
 {
-	echo "[$GL_REPO] $GL_USER pushed ??? new commits to $short_refname:"
-
-	# Consider this:
-	#   1 --- 2 --- O --- X --- 3 --- 4 --- N
-	#
-	# O is $oldrev for $refname
-	# N is $newrev for $refname
-	# X is a revision pointed to by some other ref, for which we may
-	#   assume that an email has already been generated.
-	# In this case we want to issue an email containing only revisions
-	# 3, 4, and N.  Given (almost) by
-	#
-	#  git rev-list N ^O --not --all
-	#
-	# The reason for the "almost", is that the "--not --all" will take
-	# precedence over the "N", and effectively will translate to
-	#
-	#  git rev-list N ^O ^X ^N
-	#
-	# So, we need to build up the list more carefully.  git rev-parse
-	# will generate a list of revs that may be fed into git rev-list.
-	# We can get it to make the "--not --all" part and then filter out
-	# the "^N" with:
-	#
-	#  git rev-parse --not --all | grep -v N
-	#
-	# Then, using the --stdin switch to git rev-list we have effectively
-	# manufactured
-	#
-	#  git rev-list N ^O ^X
-	#
-	# This leaves a problem when someone else updates the repository
-	# while this script is running.  Their new value of the ref we're
-	# working on would be included in the "--not --all" output; and as
-	# our $newrev would be an ancestor of that commit, it would exclude
-	# all of our commits.  What we really want is to exclude the current
-	# value of $refname from the --not list, rather than N itself.  So:
-	#
-	#  git rev-parse --not --all | grep -v $(git rev-parse $refname)
-	#
-	# Get's us to something pretty safe (apart from the small time
-	# between refname being read, and git rev-parse running - for that,
-	# I give up)
-	#
-	#
-	# Next problem, consider this:
-	#   * --- B --- * --- O ($oldrev)
-	#          \
-	#           * --- X --- * --- N ($newrev)
-	#
-	# That is to say, there is no guarantee that oldrev is a strict
-	# subset of newrev (it would have required a --force, but that's
-	# allowed).  So, we can't simply say rev-list $oldrev..$newrev.
-	# Instead we find the common base of the two revs and list from
-	# there.
-	#
-	# As above, we need to take into account the presence of X; if
-	# another branch is already in the repository and points at some of
-	# the revisions that we are about to output - we don't want them.
-	# The solution is as before: git rev-parse output filtered.
-	#
-	# Finally, tags: 1 --- 2 --- O --- T --- 3 --- 4 --- N
-	#
-	# Tags pushed into the repository generate nice shortlog emails that
-	# summarise the commits between them and the previous tag.  However,
-	# those emails don't include the full commit messages that we output
-	# for a branch update.  Therefore we still want to output revisions
-	# that have been output on a tag email.
-	#
-	# Luckily, git rev-parse includes just the tool.  Instead of using
-	# "--all" we use "--branches"; this has the added benefit that
-	# "remotes/" will be ignored as well.
-
-	# List all of the revisions that were removed by this update, in a
-	# fast-forward update, this list will be empty, because rev-list O
-	# ^N is empty.  For a non-fast-forward, O ^N is the list of removed
-	# revisions
 	fast_forward=""
-	rev=""
-	for rev in $(git rev-list $newrev..$oldrev)
-	do
-		revtype=$(git cat-file -t "$rev")
-		echo "  discards  $rev ($revtype)"
-	done
-	if [ -z "$rev" ]; then
-		fast_forward=1
-	fi
-
-	# List all the revisions from baserev to newrev in a kind of
-	# "table-of-contents"; note this list can include revisions that
-	# have already had notification emails and is present to show the
-	# full detail of the change from rolling back the old revision to
-	# the base revision and then forward to the new revision
-	for rev in $(git rev-list $oldrev..$newrev)
-	do
-		revtype=$(git cat-file -t "$rev")
-#		echo "       via  $rev ($revtype)"
-	done
+	[ -z "$(git rev-list $newrev..$oldrev)" ] && fast_forward=1
 
 	if [ "$fast_forward" ]; then
-		echo "      from  $oldrev ($oldrev_type)" >/dev/null
+		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}__COUNT__$xR new __COMMITS__ to $xC$short_refname$xR"
 	else
-		#  1. Existing revisions were removed.  In this case newrev
-		#     is a subset of oldrev - this is the reverse of a
-		#     fast-forward, a rewind
-		#  2. New revisions were added on top of an old revision,
-		#     this is a rewind and addition.
+		#baserev=$(git merge-base $oldrev $newrev)
+		#rewind_only=""
+		#[ "$baserev" = "$newrev" ] && rewind_only=1
 
-		# (1) certainly happened, (2) possibly.  When (2) hasn't
-		# happened, we set a flag to indicate that no log printout
-		# is required.
-
-		# Find the common ancestor of the old and new revisions and
-		# compare it with newrev
-		baserev=$(git merge-base $oldrev $newrev)
-		rewind_only=""
-		if [ "$baserev" = "$newrev" ]; then
-#			echo "This update discarded existing revisions and left the branch pointing at"
-#			echo "a previous point in the repository history."
-#			echo ""
-#			echo " * -- * -- N ($newrev)"
-#			echo "            \\"
-#			echo "             O -- O -- O ($oldrev)"
-#			echo ""
-#			echo "The removed revisions are not necessarily gone - if another reference"
-#			echo "still refers to them they will stay in the repository."
-			rewind_only=1
-#		else
-#			echo "This update added new revisions after undoing existing revisions.  That is"
-#			echo "to say, the old revision is not a strict subset of the new revision.  This"
-#			echo "situation occurs when you --force push a change and generate a repository"
-#			echo "containing something like this:"
-#			echo ""
-#			echo " * -- * -- B -- O -- O -- O ($oldrev)"
-#			echo "            \\"
-#			echo "             N -- N -- N ($newrev)"
-#			echo ""
-#			echo "When this happens we assume that you've already had alert emails for all"
-#			echo "of the O revisions, and so we here report only the revisions in the N"
-#			echo "branch from the common base, B."
-		fi
-	fi
-
-	if [ -z "$rewind_only" ]; then
-#		echo "Those revisions listed above that are new to this repository have"
-#		echo "not appeared on any other notification email; so we list those"
-#		echo "revisions in full, below."
-
-		show_new_revisions
-	#else
-	#	echo "No new revisions were added by this update."
+		short_oldrev=$(git rev-parse --short $oldrev)
+		short_newrev=$(git rev-parse --short $newrev)
+		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE$short_oldrev$xR to $xE$short_newrev$xR (+${xD}__COUNT__$xR new __COMMITS__)"
 	fi
 }
 
@@ -530,83 +371,25 @@ generate_delete_atag_email()
 	echo $LOGEND
 }
 
-# --------------- General references
+# --------------- General references (most likely tags)
 
-#
-# Called when any other type of reference is created (most likely a
-# non-annotated tag)
-#
 generate_create_general_email()
 {
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "        at  $newrev ($newrev_type)"
-
-	generate_general_email
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR tagged $xC$short_refname$xR at $xE"$(git rev-parse --short $newrev)"$xR"
 }
 
-#
-# Called when any other type of reference is updated (most likely a
-# non-annotated tag)
-#
 generate_update_general_email()
 {
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "        to  $newrev ($newrev_type)"
-	echo "      from  $oldrev"
-
-	generate_general_email
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(git rev-parse --short $oldrev)"$xR to $xE"$(git rev-parse --short $newrev)"$xR"
 }
 
-#
-# Called for creation or update of any other type of reference
-#
-generate_general_email()
-{
-	# Unannotated tags are more about marking a point than releasing a
-	# version; therefore we don't do the shortlog summary that we do for
-	# annotated tags above - we simply show that the point has been
-	# marked, and print the log message for the marked point for
-	# reference purposes
-	#
-	# Note this section also catches any other reference type (although
-	# there aren't any) and deals with them in the same way.
-
-	echo ""
-	if [ "$newrev_type" = "commit" ]; then
-		echo $LOGBEGIN
-		git diff-tree -s --always --encoding=UTF-8 --pretty=medium $newrev
-		echo $LOGEND
-	else
-		# What can we do here?  The tag marks an object that is not
-		# a commit, so there is no log for us to display.  It's
-		# probably not wise to output git cat-file as it could be a
-		# binary blob.  We'll just say how big it is
-		echo "$newrev is a $newrev_type, and is $(git cat-file -s $newrev) bytes long."
-	fi
-}
-
-#
-# Called for the deletion of any other type of reference
-#
 generate_delete_general_email()
 {
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "       was  $oldrev"
-	echo ""
-	echo $LOGBEGIN
-	git diff-tree -s --always --encoding=UTF-8 --pretty=oneline $oldrev
-	echo $LOGEND
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(git rev-parse --short $oldrev)"$xR"
 }
-
 
 # --------------- Miscellaneous utilities
 
-#
-# Show new revisions as the user would like to see them in the email.
-#
 show_new_revisions()
 {
 	# This shows all log entries that are not already covered by
@@ -626,14 +409,29 @@ show_new_revisions()
 		revspec=$oldrev..$newrev
 	fi
 
+	tmp=$(mktemp)
+
 	other_branches=$(git for-each-ref --format='%(refname)' refs/heads/ |
 	    grep -F -v $refname)
-	git rev-parse --not $other_branches |
-		git rev-list --reverse --stdin $revspec |
-		while read onerev
-		do
-			git log -1 --format="${GL_REPO}/${short_refname} %h %an: %s" $onerev
-		done
+	git rev-parse --not $other_branches | git rev-list --reverse --stdin $revspec >$tmp
+
+	count=$(cat $tmp | wc -l)
+	parent=$newrev
+	if [ $count -gt 0 ] ; then
+		parent=$(git rev-parse $(cat $tmp | head -n 1)^)
+	fi
+	sympar=$(git name-rev --name-only --refs='refs/heads/*' $parent)
+
+	echo "$1"$( [ $count -gt 0 ] && echo ":" ) | \
+		sed "s/__COUNT__/$count/g" | \
+		sed "s/__SYMPARENT__/$(echo "$sympar" | sed -e 's/[\/&]/\\&/g')/g" | \
+		sed "s/__COMMITS__/commit$( [ $count -ne 1 ] && echo "s" )/g"
+
+	cat $tmp | while read onerev ; do
+		git log -1 --format="$xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
+	done
+
+	rm $tmp
 }
 
 
