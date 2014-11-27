@@ -1,5 +1,13 @@
 #!/bin/sh
 
+#
+# Copyright (c) 2014 Michal Rus
+# Based on `contrib/post-receive-email` copyright (c) 2007 Andy Parkins
+#
+# Outputs to stdout, most probably you'll want to pipe it to `suckless/ii`.
+#
+
+# IRC colors (same as GitHub's)
 
 xA=$(/bin/echo -e '\x0313')
 xB=$(/bin/echo -e '\x0315')
@@ -9,95 +17,6 @@ xE=$(/bin/echo -e '\x0314')
 xF=$(/bin/echo -e '\x0304')
 xR=$(/bin/echo -e '\x0f')
 
-
-#
-# Copyright (c) 2007 Andy Parkins
-#
-# An example hook script to mail out commit update information.
-#
-# NOTE: This script is no longer under active development.  There
-# is another script, git-multimail, which is more capable and
-# configurable and is largely backwards-compatible with this script;
-# please see "contrib/hooks/multimail/".  For instructions on how to
-# migrate from post-receive-email to git-multimail, please see
-# "README.migrate-from-post-receive-email" in that directory.
-#
-# This hook sends emails listing new revisions to the repository
-# introduced by the change being reported.  The rule is that (for
-# branch updates) each commit will appear on one email and one email
-# only.
-#
-# This hook is stored in the contrib/hooks directory.  Your distribution
-# will have put this somewhere standard.  You should make this script
-# executable then link to it in the repository you would like to use it in.
-# For example, on debian the hook is stored in
-# /usr/share/git-core/contrib/hooks/post-receive-email:
-#
-#  cd /path/to/your/repository.git
-#  ln -sf /usr/share/git-core/contrib/hooks/post-receive-email hooks/post-receive
-#
-# This hook script assumes it is enabled on the central repository of a
-# project, with all users pushing only to it and not between each other.  It
-# will still work if you don't operate in that style, but it would become
-# possible for the email to be from someone other than the person doing the
-# push.
-#
-# To help with debugging and use on pre-v1.5.1 git servers, this script will
-# also obey the interface of hooks/update, taking its arguments on the
-# command line.  Unfortunately, hooks/update is called once for each ref.
-# To avoid firing one email per ref, this script just prints its output to
-# the screen when used in this mode.  The output can then be redirected if
-# wanted.
-#
-# Config
-# ------
-# hooks.mailinglist
-#   This is the list that all pushes will go to; leave it blank to not send
-#   emails for every ref update.
-# hooks.announcelist
-#   This is the list that all pushes of annotated tags will go to.  Leave it
-#   blank to default to the mailinglist field.  The announce emails lists
-#   the short log summary of the changes since the last annotated tag.
-# hooks.envelopesender
-#   If set then the -f option is passed to sendmail to allow the envelope
-#   sender address to be set
-# hooks.emailprefix
-#   All emails have their subjects prefixed with this prefix, or "[SCM]"
-#   if emailprefix is unset, to aid filtering
-# hooks.showrev
-#   The shell command used to format each revision in the email, with
-#   "%s" replaced with the commit id.  Defaults to "git rev-list -1
-#   --pretty %s", displaying the commit id, author, date and log
-#   message.  To list full patches separated by a blank line, you
-#   could set this to "git show -C %s; echo".
-#   To list a gitweb/cgit URL *and* a full patch for each change set, use this:
-#     "t=%s; printf 'http://.../?id=%%s' \$t; echo;echo; git show -C \$t; echo"
-#   Be careful if "..." contains things that will be expanded by shell "eval"
-#   or printf.
-# hooks.emailmaxlines
-#   The maximum number of lines that should be included in the generated
-#   email body. If not specified, there is no limit.
-#   Lines beyond the limit are suppressed and counted, and a final
-#   line is added indicating the number of suppressed lines.
-# hooks.diffopts
-#   Alternate options for the git diff-tree invocation that shows changes.
-#   Default is "--stat --summary --find-copies-harder". Add -p to those
-#   options to include a unified diff of changes in addition to the usual
-#   summary output.
-#
-# Notes
-# -----
-# All emails include the headers "X-Git-Refname", "X-Git-Oldrev",
-# "X-Git-Newrev", and "X-Git-Reftype" to enable fine tuned filtering and
-# give information for debugging.
-#
-
-# ---------------------------- Functions
-
-#
-# Function to prepare for email generation. This decides what type
-# of update this is and whether an email should even be generated.
-#
 prep_for_email()
 {
 	# --- Arguments
@@ -180,34 +99,8 @@ prep_for_email()
 	return 0
 }
 
-#
-# Top level email generation function.  This calls the appropriate
-# body-generation routine after outputting the common header.
-#
-# Note this function doesn't actually generate any email output, that is
-# taken care of by the functions it calls:
-#  - generate_email_header
-#  - generate_create_XXXX_email
-#  - generate_update_XXXX_email
-#  - generate_delete_XXXX_email
-#  - generate_email_footer
-#
-# Note also that this function cannot 'exit' from the script; when this
-# function is running (in hook script mode), the send_mail() function
-# is already executing in another process, connected via a pipe, and
-# if this function exits without, whatever has been generated to that
-# point will be sent as an email... even if nothing has been generated.
-#
 generate_email()
 {
-	# Email parameters
-	# The email subject will contain the best description of the ref
-	# that we can build from the parameters
-	describe=$(git describe $rev 2>/dev/null)
-	if [ -z "$describe" ]; then
-		describe=$rev
-	fi
-
 	# Call the correct body generation function
 	fn_name=general
 	case "$refname_type" in
@@ -215,30 +108,20 @@ generate_email()
 		fn_name=branch
 		;;
 	"annotated tag")
-		fn_name=atag
+		fn_name=general
 		;;
 	esac
 
-	if [ -z "$maxlines" ]; then
-		generate_${change_type}_${fn_name}_email
-	else
-		generate_${change_type}_${fn_name}_email | limit_lines $maxlines
-	fi
+	generate_${change_type}_${fn_name}_email
 }
 
 # --------------- Branches
 
-#
-# Called for the creation of a branch
-#
 generate_create_branch_email()
 {
 	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from ${xC}__SYMPARENT__$xR (+${xD}__COUNT__$xR new __COMMITS__)"
 }
 
-#
-# Called for the change of a pre-existing branch
-#
 generate_update_branch_email()
 {
 	fast_forward=""
@@ -247,128 +130,13 @@ generate_update_branch_email()
 	if [ "$fast_forward" ]; then
 		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}__COUNT__$xR new __COMMITS__ to $xC$short_refname$xR"
 	else
-		#baserev=$(git merge-base $oldrev $newrev)
-		#rewind_only=""
-		#[ "$baserev" = "$newrev" ] && rewind_only=1
-
-		short_oldrev=$(git rev-parse --short $oldrev)
-		short_newrev=$(git rev-parse --short $newrev)
-		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE$short_oldrev$xR to $xE$short_newrev$xR (+${xD}__COUNT__$xR new __COMMITS__)"
+		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(git rev-parse --short $oldrev)"$xR to $xE"$(git rev-parse --short $newrev)"$xR (+${xD}__COUNT__$xR new __COMMITS__)"
 	fi
 }
 
-#
-# Called for the deletion of a branch
-#
 generate_delete_branch_email()
 {
 	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(git rev-parse --short $oldrev)"$xR"
-}
-
-# --------------- Annotated tags
-
-#
-# Called for the creation of an annotated tag
-#
-generate_create_atag_email()
-{
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "        at  $newrev ($newrev_type)"
-
-	generate_atag_email
-}
-
-#
-# Called for the update of an annotated tag (this is probably a rare event
-# and may not even be allowed)
-#
-generate_update_atag_email()
-{
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "        to  $newrev ($newrev_type)"
-	echo "      from  $oldrev (which is now obsolete)"
-
-	generate_atag_email
-}
-
-#
-# Called when an annotated tag is created or changed
-#
-generate_atag_email()
-{
-	# Use git for-each-ref to pull out the individual fields from the
-	# tag
-	eval $(git for-each-ref --shell --format='
-	tagobject=%(*objectname)
-	tagtype=%(*objecttype)
-	tagger=%(taggername)
-	tagged=%(taggerdate)' $refname
-	)
-
-	echo "   tagging  $tagobject ($tagtype)"
-	case "$tagtype" in
-	commit)
-
-		# If the tagged object is a commit, then we assume this is a
-		# release, and so we calculate which tag this tag is
-		# replacing
-		prevtag=$(git describe --abbrev=0 $newrev^ 2>/dev/null)
-
-		if [ -n "$prevtag" ]; then
-			echo "  replaces  $prevtag"
-		fi
-		;;
-	*)
-		echo "    length  $(git cat-file -s $tagobject) bytes"
-		;;
-	esac
-	echo " tagged by  $tagger"
-	echo "        on  $tagged"
-
-	echo ""
-	echo $LOGBEGIN
-
-	# Show the content of the tag message; this might contain a change
-	# log or release notes so is worth displaying.
-	git cat-file tag $newrev | sed -e '1,/^$/d'
-
-	echo ""
-	case "$tagtype" in
-	commit)
-		# Only commit tags make sense to have rev-list operations
-		# performed on them
-		if [ -n "$prevtag" ]; then
-			# Show changes since the previous release
-			git shortlog "$prevtag..$newrev"
-		else
-			# No previous tag, show all the changes since time
-			# began
-			git shortlog $newrev
-		fi
-		;;
-	*)
-		# XXX: Is there anything useful we can do for non-commit
-		# objects?
-		;;
-	esac
-
-	echo $LOGEND
-}
-
-#
-# Called for the deletion of an annotated tag
-#
-generate_delete_atag_email()
-{
-	echo "$refname_type $short_refname ${change_type}d. $describe"
-
-	echo "       was  $oldrev"
-	echo ""
-	echo $LOGBEGIN
-	git diff-tree -s --always --encoding=UTF-8 --pretty=oneline $oldrev
-	echo $LOGEND
 }
 
 # --------------- General references (most likely tags)
@@ -434,35 +202,7 @@ show_new_revisions()
 	rm $tmp
 }
 
-
-limit_lines()
-{
-	lines=0
-	skipped=0
-	while IFS="" read -r line; do
-		lines=$((lines + 1))
-		if [ $lines -gt $1 ]; then
-			skipped=$((skipped + 1))
-		else
-			printf "%s\n" "$line"
-		fi
-	done
-	if [ $skipped -ne 0 ]; then
-		echo "... $skipped lines suppressed ..."
-	fi
-}
-
-
-send_mail()
-{
-	cat
-}
-
 # ---------------------------- main()
-
-# --- Constants
-LOGBEGIN="- Log -----------------------------------------------------------------"
-LOGEND="-----------------------------------------------------------------------"
 
 # --- Config
 # Set GIT_DIR either from the working directory, or from the environment
@@ -473,35 +213,17 @@ if [ -z "$GIT_DIR" ]; then
 	exit 1
 fi
 
-projectdesc=$(sed -ne '1p' "$GIT_DIR/description" 2>/dev/null)
-# Check if the description is unchanged from it's default, and shorten it to
-# a more manageable length if it is
-if expr "$projectdesc" : "Unnamed repository.*$" >/dev/null
-then
-	projectdesc="UNNAMED PROJECT"
-fi
-
-recipients=$(git config hooks.mailinglist)
-announcerecipients=$(git config hooks.announcelist)
-envelopesender=$(git config hooks.envelopesender)
-emailprefix=$(git config hooks.emailprefix || echo '[SCM] ')
-custom_showrev=$(git config hooks.showrev)
-maxlines=$(git config hooks.emailmaxlines)
-diffopts=$(git config hooks.diffopts)
-: ${diffopts:="--stat --summary --find-copies-harder"}
-
 # --- Main loop
 # Allow dual mode: run from the command line just like the update hook, or
 # if no arguments are given then run as a hook script
+#
+# Output to the terminal
 if [ -n "$1" -a -n "$2" -a -n "$3" ]; then
-	# Output to the terminal in command line mode - if someone wanted to
-	# resend an email; they could redirect the output to sendmail
-	# themselves
 	prep_for_email $2 $3 $1 && PAGER= generate_email
 else
 	while read oldrev newrev refname
 	do
 		prep_for_email $oldrev $newrev $refname || continue
-		generate_email $maxlines | send_mail
+		generate_email $maxlines
 	done
 fi
