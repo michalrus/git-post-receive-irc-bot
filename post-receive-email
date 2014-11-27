@@ -121,7 +121,7 @@ generate_email()
 
 generate_create_branch_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from "$(rev2ref $new_revs_parent)" (+${xD}$new_revs_count$xR new $s_commits)"
+	show_new_revisions "created $xC$short_refname$xR from "$(rev2ref $new_revs_parent)" (+${xD}$new_revs_count$xR new $s_commits)"
 }
 
 generate_update_branch_email()
@@ -132,35 +132,35 @@ generate_update_branch_email()
 
 	if [ "$fast_forward" ]; then
 		if [ $new_revs_count -gt 0 ] ; then
-			show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}$new_revs_count$xR new $s_commits to $xC$short_refname$xR"
+			show_new_revisions "pushed ${xD}$new_revs_count$xR new $s_commits to $xC$short_refname$xR"
 		else
-			show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR fast-forwarded $xC$short_refname$xR to "$(rev2ref $newrev)" (+${xD}0$xR new commits)"
+			show_new_revisions "fast-forwarded $xC$short_refname$xR to "$(rev2ref $newrev)" (+${xD}0$xR new commits)"
 		fi
 	else
-		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)" (+$xD$new_revs_count$xR new $s_commits)"
+		show_new_revisions "${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)" (+$xD$new_revs_count$xR new $s_commits)"
 	fi
 }
 
 generate_delete_branch_email()
 {
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
+	echo "${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
 }
 
 # --------------- General references (most likely tags)
 
 generate_create_general_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR tagged $xC$short_refname$xR at "$(rev2ref $newrev)
+	show_new_revisions "tagged $xC$short_refname$xR at "$(rev2ref $newrev)
 }
 
 generate_update_general_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)
+	show_new_revisions "${xF}force-pushed$xR $xC$short_refname$xR from "$(rev2ref $oldrev)" to "$(rev2ref $newrev)
 }
 
 generate_delete_general_email()
 {
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
+	echo "${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
 }
 
 # --------------- Miscellaneous utilities
@@ -221,7 +221,7 @@ prep_for_show_new_revs()
 
 show_new_revisions()
 {
-	echo "$1"$( [ $new_revs_count -gt 0 ] && echo ":" )
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR $1"$( [ $new_revs_count -gt 0 ] && echo ":" )
 	cat $new_revs_list_file | while read onerev ; do
 		git log -1 --format="  $xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
 	done
