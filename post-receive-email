@@ -102,6 +102,7 @@ prep_for_email()
 generate_email()
 {
 	# Call the correct body generation function
+	local fn_name
 	fn_name=general
 	case "$refname_type" in
 	"tracking branch"|branch)
@@ -112,6 +113,7 @@ generate_email()
 		;;
 	esac
 
+	prep_for_show_new_revs
 	generate_${change_type}_${fn_name}_email
 }
 
@@ -119,87 +121,111 @@ generate_email()
 
 generate_create_branch_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from ${xC}__SYMPARENT__$xR (+${xD}__COUNT__$xR new __COMMITS__)"
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR created $xC$short_refname$xR from $xC$(rev2ref $new_revs_parent)$xR (+${xD}$new_revs_count$xR new $s_commits)"
 }
 
 generate_update_branch_email()
 {
+	local fast_forward
 	fast_forward=""
 	[ -z "$(git rev-list $newrev..$oldrev)" ] && fast_forward=1
 
 	if [ "$fast_forward" ]; then
-		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}__COUNT__$xR new __COMMITS__ to $xC$short_refname$xR"
+		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR pushed ${xD}$new_revs_count$xR new $s_commits to $xC$short_refname$xR"
 	else
-		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(git rev-parse --short $oldrev)"$xR to $xE"$(git rev-parse --short $newrev)"$xR (+${xD}__COUNT__$xR new __COMMITS__)"
+		show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(shorten $oldrev)"$xR to $xE"$(shorten $newrev)"$xR (+${xD}$new_revs_count$xR new $s_commits)"
 	fi
 }
 
 generate_delete_branch_email()
 {
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(git rev-parse --short $oldrev)"$xR"
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(shorten $oldrev)"$xR"
 }
 
 # --------------- General references (most likely tags)
 
 generate_create_general_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR tagged $xC$short_refname$xR at $xE"$(git rev-parse --short $newrev)"$xR"
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR tagged $xC$short_refname$xR at $xE"$(shorten $newrev)"$xR"
 }
 
 generate_update_general_email()
 {
-	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(git rev-parse --short $oldrev)"$xR to $xE"$(git rev-parse --short $newrev)"$xR"
+	show_new_revisions "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}force-pushed$xR $xC$short_refname$xR from $xE"$(shorten $oldrev)"$xR to $xE"$(shorten $newrev)"$xR"
 }
 
 generate_delete_general_email()
 {
-	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(git rev-parse --short $oldrev)"$xR"
+	echo "[$xA$GL_REPO$xR] $xB$GL_USER$xR ${xF}deleted$xR $xC$short_refname$xR at $xE"$(shorten $oldrev)"$xR"
 }
 
 # --------------- Miscellaneous utilities
 
-show_new_revisions()
+shorten() {
+	git rev-parse --short "$1"
+}
+
+rev2ref() {
+	local first_symbol
+	first_symbol=$(git for-each-ref --format="%(refname:short) %(objectname)" 'refs/heads/' | grep "$1" | grep -v "^$short_refname " | cut -d " " -f 1 | head -n 1)
+
+	if [ -n "$first_symbol" ] ; then
+		echo "$first_symbol"
+	else
+		shorten "$1"
+	fi
+}
+
+prep_for_show_new_revs()
 {
-	# This shows all log entries that are not already covered by
+	local revspec
+
+	# This finds all log entries that are not already covered by
 	# another ref - i.e. commits that are now accessible from this
 	# ref that were previously not accessible
-	# (see generate_update_branch_email for the explanation of this
-	# command)
 
 	# Revision range passed to rev-list differs for new vs. updated
 	# branches.
-	if [ "$change_type" = create ]
-	then
+	if [ "$change_type" = create ] ; then
 		# Show all revisions exclusive to this (new) branch.
 		revspec=$newrev
+	elif [ "$change_type" = delete ] ; then
+		return
 	else
 		# Branch update; show revisions not part of $oldrev.
 		revspec=$oldrev..$newrev
 	fi
 
-	tmp=$(mktemp)
+	new_revs_list_file=$(mktemp)
 
-	other_branches=$(git for-each-ref --format='%(refname)' refs/heads/ |
-	    grep -F -v $refname)
-	git rev-parse --not $other_branches | git rev-list --reverse --stdin $revspec >$tmp
+	local other_branches
+	other_branches=$(git for-each-ref --format='%(refname)' refs/heads/ | grep -F -v $refname)
+	git rev-parse --not $other_branches | git rev-list --reverse --stdin $revspec >$new_revs_list_file
 
-	count=$(cat $tmp | wc -l)
-	parent=$newrev
-	if [ $count -gt 0 ] ; then
-		parent=$(git rev-parse $(cat $tmp | head -n 1)^)
+	new_revs_count=$(cat $new_revs_list_file | wc -l)
+
+	s_commits="commits"
+	[ $new_revs_count -eq 1 ] && s_commits="commit"
+
+	if [ $new_revs_count -eq 0 ] ; then
+		new_revs_parent=$newrev
+	else
+		new_revs_parent=$(git rev-parse $(cat $new_revs_list_file | head -n 1)^ 2>/dev/null) || \
+			new_revs_parent=$oldrev # 0000000 if creating a completely new, parentless tree
 	fi
-	sympar=$(git name-rev --name-only --refs='refs/heads/*' $parent)
+}
 
-	echo "$1"$( [ $count -gt 0 ] && echo ":" ) | \
-		sed "s/__COUNT__/$count/g" | \
-		sed "s/__SYMPARENT__/$(echo "$sympar" | sed -e 's/[\/&]/\\&/g')/g" | \
-		sed "s/__COMMITS__/commit$( [ $count -ne 1 ] && echo "s" )/g"
-
-	cat $tmp | while read onerev ; do
+show_new_revisions()
+{
+	echo "$1"$( [ $new_revs_count -gt 0 ] && echo ":" )
+	cat $new_revs_list_file | while read onerev ; do
 		git log -1 --format="$xA$GL_REPO$xR/$xC$short_refname$xR $xE%h$xR $xB%an$xR: %s" $onerev
 	done
+}
 
-	rm $tmp
+cleanup_show_new_revs()
+{
+	rm $new_revs_list_file
 }
 
 # ---------------------------- main()
