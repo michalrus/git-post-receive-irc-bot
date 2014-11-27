@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# download http://tools.suckless.org/ii/ and `make clean install` to ./us/ prefix
-
 channels_onconnect='#chan1 #chan2 #chan3'
 
 owndir="$(dirname "$(readlink -f "$0")")"

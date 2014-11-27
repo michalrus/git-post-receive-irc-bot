@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# ./connect and call this script from your $REPO.git/hooks/post-receive script
-# takes two args: <network> and <channel> (these are ii's args, see ./connect)
-
 die() {
   echo 'fatal:' "$@" >&2
   exit 1
