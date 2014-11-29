@@ -11,7 +11,7 @@ if ($#ARGV != 1) {
 my $who = $ARGV[0];
 my $msg = $ARGV[1];
 
-if (0) { }
+if ($who =~ /git/i) { }
 
 elsif ($msg =~ /^[!@]g (.*)$/i) {
   my $q = $1;
@@ -27,7 +27,7 @@ elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
 }
 
 elsif ($msg =~ /truj|truł|truc/i) {
-  print "$who, stary, sam trujesz…\n";
+  print "$who, stary, sam nie truj. :-)\n";
 }
 
 elsif ($msg =~ /^dobra(,|\.|$)/i) {
@@ -39,18 +39,18 @@ elsif ($msg =~ /\.\.\./i) {
 }
 
 elsif ($msg =~ /troll?[uo]/i) {
-  print "$who, k××wa, stary, sam trollujesz, hehe.\n";
+  print "$who, k××wa, stary, sam nie trolluj, hehe.\n";
 }
 
 elsif ($msg =~ /rectal|rectum|prolapse/i) {
   print "$who, 8=====>~ (_o_) ? :-)\n";
 }
 
-elsif ($msg =~ /pierdo|k+u+r+w+a|stary/i) {
+elsif ($msg =~ /pierdo|k+u+r+w+a|stary|( |^)sra/i) {
   print "$who, k××wa, stary…\n";
 }
 
-elsif ($msg =~ /weź/i) {
+elsif ($msg =~ /we+ź/i) {
   print "$who, sam weź.\n";
 }
 
