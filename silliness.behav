@@ -1,0 +1,63 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+if ($#ARGV != 1) {
+  print STDERR "usage: $0 <who> <msg>\n";
+  exit 1;
+}
+
+my $who = $ARGV[0];
+my $msg = $ARGV[1];
+
+if (0) { }
+
+elsif ($msg =~ /^[!@]g (.*)$/i) {
+  my $q = $1;
+  $q =~ s/\s+/+/g;
+  $q =~ s/'/%27/g;
+  $q =~ s/"/%22/g;
+  print "https://www.google.com/search?q=$q\n";
+}
+
+elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
+  my $t = $1;
+  print "\x01ACTION decomposes $t into several parts using the Banach-Tarski theorem and reassembles them to get two copies of $t!\x01\n";
+}
+
+elsif ($msg =~ /truj|truł|truc/i) {
+  print "$who, stary, sam trujesz…\n";
+}
+
+elsif ($msg =~ /^dobra(,|\.|$)/i) {
+  print "$who, „dobrze”…\n";
+}
+
+elsif ($msg =~ /\.\.\./i) {
+  print "$who, proszę, „…”.\n";
+}
+
+elsif ($msg =~ /troll?[uo]/i) {
+  print "$who, k××wa, stary, sam trollujesz, hehe.\n";
+}
+
+elsif ($msg =~ /rectal|rectum|prolapse/i) {
+  print "$who, 8=====>~ (_o_) ? :-)\n";
+}
+
+elsif ($msg =~ /pierdo|k+u+r+w+a|stary/i) {
+  print "$who, k××wa, stary…\n";
+}
+
+elsif ($msg =~ /weź/i) {
+  print "$who, sam weź.\n";
+}
+
+elsif ($msg =~ /^git[,:] (.*?)[?!.]*$/i) {
+  print "$who, sam jesteś $1.\n";
+}
+
+elsif ($msg =~ /git/i) {
+  print "$who, hm?\n";
+}
