@@ -2,54 +2,61 @@
 
 use strict;
 use warnings;
+use utf8;
 
-if ($#ARGV != 1) {
-  print STDERR "usage: $0 <who> <msg>\n";
-  exit 1;
-}
+binmode(STDIN, ":utf8");
+binmode(STDERR, ":utf8");
+binmode(STDOUT, ":utf8");
 
-my $who = $ARGV[0];
-my $msg = $ARGV[1];
+my $line = <>;
+chomp $line;
+$line =~ s/^\d\d\d\d-\d\d-\d\d \d\d:\d\d //;
 
-if ($who =~ /git/i) { }
+if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
+  my $who = $1;
+  my $msg = $2;
 
-elsif ($msg =~ /^[!@]g (.*)$/i) {
-  my $q = $1;
-  $q =~ s/\s+/+/g;
-  $q =~ s/'/%27/g;
-  $q =~ s/"/%22/g;
-  print "https://www.google.com/search?q=$q\n";
-}
+  if ($who =~ /git/i) { }
 
-elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
-  my $t = $1;
-  print "\x01ACTION decomposes $t into several parts using the Banach-Tarski theorem and reassembles them to get two copies of $t!\x01\n";
-}
+  elsif ($msg =~ /^[!@]g (.*)$/i) {
+    my $q = $1;
+    $q =~ s/\s+/+/g;
+    $q =~ s/'/%27/g;
+    $q =~ s/"/%22/g;
+    print "https://www.google.com/search?q=$q\n";
+  }
 
-elsif ($msg =~ /truj|truł|truc/i) {
-  print "$who, stary, sam nie truj. :-)\n";
-}
+  elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
+    my $t = $1;
+    print "\x01ACTION decomposes $t into several parts using the Banach-Tarski theorem and reassembles them to get two copies of $t!\x01\n";
+  }
 
-elsif ($msg =~ /troll?[uo]/i) {
-  print "$who, k××wa, stary, sam nie trolluj, hehe.\n";
-}
+  elsif ($msg =~ /tru[jłcć]/i) {
+    print "$who, stary, sam nie truj. :-)\n";
+  }
 
-elsif ($msg =~ /rectal|rectum|prolapse/i) {
-  print "$who, 8=====>~ (_o_) ? :-)\n";
-}
+  elsif ($msg =~ /troll?[uo]/i) {
+    print "$who, k××wa, stary, sam nie trolluj, hehe.\n";
+  }
 
-elsif ($msg =~ /pierdo|k+u+r+w+a|stary|( |^)sra/i) {
-  print "$who, k××wa, stary…\n";
-}
+  elsif ($msg =~ /rectal|rectum|prolapse/i) {
+    print "$who, 8=====>~ (_o_) ? :-)\n";
+  }
 
-elsif ($msg =~ /we+ź/i) {
-  print "$who, sam weź.\n";
-}
+  elsif ($msg =~ /pierdo|k+u+r+w+a|stary|( |^)sra/i) {
+    print "$who, k××wa, stary…\n";
+  }
 
-elsif ($msg =~ /^git[,:] (.*?)[?!.]*$/i) {
-  print "$who, sam jesteś $1.\n";
-}
+  elsif ($msg =~ /we+ź/i) {
+    print "$who, sam weź.\n";
+  }
 
-elsif ($msg =~ /git/i) {
-  print "$who, hm?\n";
+  elsif ($msg =~ /^git[,:] (.*?)[?!.]*$/i) {
+    print "$who, sam jesteś $1.\n";
+  }
+
+  elsif ($msg =~ /git/i) {
+    print "$who, hm?\n";
+  }
+
 }
