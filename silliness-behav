@@ -12,7 +12,10 @@ my $line = <>;
 chomp $line;
 $line =~ s/^\d\d\d\d-\d\d-\d\d \d\d:\d\d //;
 
-if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
+if ($line =~ /^-!- (.*?)\(.*?\) has joined /) {
+  print "$1, siemandero! :-)\n";
+}
+elsif ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
   my $who = $1;
   my $msg = $2;
 
