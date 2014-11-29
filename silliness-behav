@@ -8,6 +8,29 @@ binmode(STDIN, ":utf8");
 binmode(STDERR, ":utf8");
 binmode(STDOUT, ":utf8");
 
+my @slaps = (
+  'activates her slap-o-matic…',
+  'beats up ___',
+  'clobbers ___ with an untyped language',
+  'decomposes ___ into several parts using the Banach-Tarski theorem and reassembles them to get two copies of ___!',
+  'hits ___ with an assortment of kitchen utensils',
+  'hits ___ with a hammer, so they break into a thousand pieces',
+  'is overcome by a sudden desire to hurt ___',
+  'jabs ___ with a C pointer',
+  'karate-chops ___ into two equally sized halves',
+  'locks up ___ in a Monad',
+  'orders her trained monkeys to punch ___',
+  'places her fist firmly on ___\'s jaw',
+  'pokes ___ in the eye',
+  'puts on her slapping gloves, and slaps ___',
+  'secretly deletes ___\'s source code',
+  'smacks ___ about with a large trout',
+  'smashes a lamp on ___\'s head',
+  'throws some pointy lambdas at ___',
+  'whistles too',
+  'will count to five...'
+);
+
 my $line = <>;
 chomp $line;
 $line =~ s/^\d\d\d\d-\d\d-\d\d \d\d:\d\d //;
@@ -31,7 +54,9 @@ elsif ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
 
   elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
     my $t = $1;
-    print "\x01ACTION decomposes $t into several parts using the Banach-Tarski theorem and reassembles them to get two copies of $t!\x01\n";
+    my $r = $slaps[rand @slaps];
+    $r =~ s/___/$t/g;
+    print "\x01ACTION $r\x01\n";
   }
 
   elsif ($msg =~ /tru[jłcć]/i) {
