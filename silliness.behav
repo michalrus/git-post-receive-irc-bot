@@ -30,14 +30,6 @@ elsif ($msg =~ /truj|truł|truc/i) {
   print "$who, stary, sam nie truj. :-)\n";
 }
 
-elsif ($msg =~ /^dobra(,|\.|$)/i) {
-  print "$who, „dobrze”…\n";
-}
-
-elsif ($msg =~ /\.\.\./i) {
-  print "$who, proszę, „…”.\n";
-}
-
 elsif ($msg =~ /troll?[uo]/i) {
   print "$who, k××wa, stary, sam nie trolluj, hehe.\n";
 }
