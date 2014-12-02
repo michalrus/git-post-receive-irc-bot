@@ -52,23 +52,15 @@ if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
     print "https://www.google.com/search?q=$q\n";
   }
 
+  elsif ($msg =~ /^[!@]h$/i) {
+    print "$who, hilight!\n";
+  }
+
   elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
     my $t = $1;
     my $r = $slaps[rand @slaps];
     $r =~ s/___/$t/g;
     print "\x01ACTION $r\x01\n";
-  }
-
-  elsif ($msg =~ /rectal|odbyt|wypadnię|prolapse/i) {
-    print "$who, 8=====>~ (_o_) ? :-)\n";
-  }
-
-  elsif ($msg =~ /we+ź/i) {
-    print "$who, sam weź.\n";
-  }
-
-  elsif ($msg =~ /^git[,:] (.*?)[?!.]*$/i) {
-    print "$who, sam jesteś $1.\n";
   }
 
 }
