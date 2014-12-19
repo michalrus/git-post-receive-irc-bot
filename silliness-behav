@@ -52,6 +52,14 @@ if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
     print "https://www.google.com/search?q=$q\n";
   }
 
+  elsif ($msg =~ /^[!@]im (.*)$/i) {
+    my $q = $1;
+    $q =~ s/\s+/+/g;
+    $q =~ s/'/%27/g;
+    $q =~ s/"/%22/g;
+    print "https://www.google.com/search?tbm=isch&q=$q\n";
+  }
+
   elsif ($msg =~ /^[!@]h$/i) {
     print "$who, hilight!\n";
   }
