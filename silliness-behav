@@ -30,8 +30,15 @@ my @slaps = (
   'smacks ___ about with a large trout.',
   'smashes a lamp on ___\'s head.',
   'throws some pointy lambdas at ___.',
-  'whistles too.',
-  'will count to five…'
+  'whistles, too.',
+  'will count to five…',
+  'would never hurt ___!'
+);
+
+my %search = (
+  'g' => 'https://www.google.com/search?q=___',
+  'im' => 'https://www.google.com/search?tbm=isch&q=___',
+  'sjp' => 'http://sjp.pwn.pl/lista.php?co=___'
 );
 
 my $line = <>;
@@ -44,28 +51,15 @@ if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
 
   if ($who =~ /git/i) { }
 
-  elsif ($msg =~ /^[!@]g (.*)$/i) {
-    my $q = $1;
+  elsif (($msg =~ /^[!@]([^ ]+) (.*)$/i) && (defined $search{$1})) {
+    my $url = $search{$1};
+    my $q = $2;
     $q =~ s/\s+/+/g;
     $q =~ s/'/%27/g;
     $q =~ s/"/%22/g;
-    print "https://www.google.com/search?q=$q\n";
-  }
-
-  elsif ($msg =~ /^[!@]im (.*)$/i) {
-    my $q = $1;
-    $q =~ s/\s+/+/g;
-    $q =~ s/'/%27/g;
-    $q =~ s/"/%22/g;
-    print "https://www.google.com/search?tbm=isch&q=$q\n";
-  }
-
-  elsif ($msg =~ /^[!@]sjp (.*)$/i) {
-    my $q = $1;
-    $q =~ s/\s+/+/g;
-    $q =~ s/'/%27/g;
-    $q =~ s/"/%22/g;
-    print "http://sjp.pwn.pl/lista.php?co=$q\n";
+    $q =~ s/\\/%5C/g;
+    $url =~ s{___}{$q};
+    print $url . "\n";
   }
 
   elsif ($msg =~ /^[!@]h$/i) {

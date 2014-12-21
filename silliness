@@ -5,5 +5,5 @@ d="$(dirname "$(readlink -f "$0")")"
 ch="$d/irc/localhost/#us"
 
 tail -n0 -f "$ch/out" | while read -r line ; do
-  echo "$line" | "$d/silliness-behav" >"$ch/in"
+  /bin/echo "$line" | "$d/silliness-behav" >"$ch/in"
 done
