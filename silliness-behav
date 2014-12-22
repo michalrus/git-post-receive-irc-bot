@@ -9,6 +9,14 @@ binmode(STDERR, ":utf8");
 binmode(STDOUT, ":utf8");
 
 my @slaps = (
+  '_Come on, let’s all slap ___!',
+  '_Go slap ___ yourself.',
+  '_I won’t; I want to go get some cookies instead.',
+  '_I’d rather not; ___ looks rather dangerous.',
+  "_\x02*SMACK*\x0f, \x02*SLAM*\x0f, take that, ___!",
+  '_Stop telling me what to do.',
+  '_Why on earth would I slap ___?',
+
   'activates her slap-o-matic…',
   'beats up ___.',
   'clobbers ___ with an untyped language.',
@@ -20,15 +28,14 @@ my @slaps = (
   'karate-chops ___ into two equally sized halves.',
   'locks up ___ in a Monad.',
   'orders her trained monkeys to punch ___.',
-  'places her fist firmly on ___\'s jaw.',
+  'places her fist firmly on ___’s jaw.',
   'pokes ___ in the eye.',
   'pulls ___ through the Evil Mangler.',
   'puts on her slapping gloves, and slaps ___.',
-  'secretly deletes ___\'s source code.',
+  'secretly deletes ___’s source code.',
   'slaps ___ with a slab of concrete.',
-  "\x02*SMACK*\x0f, \x02*SLAM*\x0f, take that ___!",
   'smacks ___ about with a large trout.',
-  'smashes a lamp on ___\'s head.',
+  'smashes a lamp on ___’s head.',
   'throws some pointy lambdas at ___.',
   'whistles, too.',
   'will count to five…',
@@ -70,7 +77,11 @@ if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
     my $t = $1;
     my $r = $slaps[rand @slaps];
     $r =~ s/___/$t/g;
-    print "\x01ACTION $r\x01\n";
+    if ($r =~ m/^_(.*)$/) {
+      print "$1\n";
+    } else {
+      print "\x01ACTION $r\x01\n";
+    }
   }
 
   elsif ($msg =~ /^[!@]nazi$/i) {
