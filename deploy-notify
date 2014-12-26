@@ -1,0 +1,53 @@
+#!/bin/sh
+
+set -o noclobber
+set -o errexit
+set -o nounset
+
+d="$(dirname "$(readlink -f "$0")")"
+
+if [ -n "${SSH_CLIENT:-}" ] ; then
+  echo "${SSH_ORIGINAL_COMMAND:-}" | grep -qE '^deploy-notify [A-Za-z0-9]+ [A-Za-z0-9]+ [A-Za-z0-9]+ [A-Za-z0-9]+ [A-Za-z0-9.-]+$' || {
+    echo >&2 "usage: deploy-notify <server> <channel> <user> <repo> <what>"
+    echo >&2 "       all arguments accept ‘[A-Za-z0-9]+’ only"
+    exit 1
+  }
+
+  args="$(echo "${SSH_ORIGINAL_COMMAND:-}" | sed 's/^deploy-notify //' | sed 's/#/\\#/g')"
+
+  unset SSH_CLIENT
+  exec sh -c "exec $0 $args"
+fi
+
+[ $# -eq 5 ] || {
+  echo >&2 "usage: $0 <server> <channel> <user> <repo> <what>"
+  exit 1
+}
+
+server="$1"
+channel="#$2"
+user="$3"
+repo="$4"
+what="$5"
+
+pipe="$d/irc/$server/$channel/in"
+
+[ -p "$pipe" ] || {
+  echo >&2 "$pipe: not a named pipe"
+  exit 2
+}
+
+[ "$(dirname "$(dirname "$(dirname "$pipe")")")" = "$d/irc" ] || {
+  echo >&2 "$pipe: too paranoid to allow that ;-)"
+  exit 3
+}
+
+xA=$(/bin/echo -e '\x0313')
+xB=$(/bin/echo -e '\x0315')
+xC=$(/bin/echo -e '\x0306')
+xD=$(/bin/echo -e '\x02')
+xE=$(/bin/echo -e '\x0314')
+xF=$(/bin/echo -e '\x0304')
+xR=$(/bin/echo -e '\x0f')
+
+echo "[$xA$repo$xR] $xB$user$xR deployed $xD$what$xR" > "$pipe"
