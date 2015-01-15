@@ -100,4 +100,8 @@ if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
 ';
   }
 
+  elsif ($msg =~ /^git[,:]/i) {
+    print "$who, u mad?\n";
+  }
+
 }
