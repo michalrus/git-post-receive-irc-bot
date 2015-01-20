@@ -73,6 +73,10 @@ if ($line =~ /^<(.+?)>\s+(.*?)\s*$/) {
     print "$who, hilight!\n";
   }
 
+  elsif ($msg =~ /^[!@]minds$/i) {
+    print "“Great minds discuss ideas; average minds discuss events; small minds discuss people.” — Eleanor Roosevelt, First Lady of the United States\n";
+  }
+
   elsif ($msg =~ /^[!@]slap\s+(.*?)\s*$/i) {
     my $t = $1;
     my $r = $slaps[rand @slaps];
