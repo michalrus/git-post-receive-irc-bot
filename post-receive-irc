@@ -144,7 +144,7 @@ generate_update_branch_email()
 
 generate_delete_branch_email()
 {
-	echo "${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
+	show_new_revisions "${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
 }
 
 # --------------- General references (most likely tags)
@@ -161,7 +161,7 @@ generate_update_general_email()
 
 generate_delete_general_email()
 {
-	echo "${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
+	show_new_revisions "${xF}deleted$xR $xC$short_refname$xR at "$(rev2ref $oldrev)
 }
 
 # --------------- Miscellaneous utilities
@@ -185,6 +185,9 @@ prep_for_show_new_revs()
 {
 	local revspec
 
+	new_revs_list_file=$(mktemp)
+	new_revs_count=0
+
 	# This finds all log entries that are not already covered by
 	# another ref - i.e. commits that are now accessible from this
 	# ref that were previously not accessible
@@ -200,8 +203,6 @@ prep_for_show_new_revs()
 		# Branch update; show revisions not part of $oldrev.
 		revspec=$oldrev..$newrev
 	fi
-
-	new_revs_list_file=$(mktemp)
 
 	local other_branches
 	other_branches=$(git for-each-ref --format='%(refname)' refs/heads/ | grep -F -v $refname)
